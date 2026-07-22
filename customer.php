@@ -1,101 +1,45 @@
 <?php
 session_start();
-include "config.php";
-
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'customer') {
     header("Location: login.php");
     exit();
 }
+include "config.php";
 
-/* GET BOOKINGS */
-
-$sql = "SELECT * FROM bookings
-        WHERE status != 'Rejected'";
-
-$result = $conn->query($sql);
-
-$events = [];
-
-while($row = $result->fetch_assoc()) {
-
-    $events[] = [
-        'title' => 'Booked',
-        'start' => $row['event_date'],
-        'description' => $row['event_details']
-    ];
-}
+$user_id = $_SESSION['user_id'];
+$stmt = $conn->prepare("SELECT name, email FROM users WHERE user_id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user_data = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-    <title>Customer Dashboard</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Golden Pearl</title>
     <link rel="stylesheet" href="style.css">
-
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet'>
-
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
-
 </head>
-
 <body>
-
 <div class="dashboard-container">
-
     <?php include "sidebar_customer.php"; ?>
-
     <div class="main-content">
-
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-
-        <h1>Welcome, <?php echo $_SESSION['name']; ?></h1>
-
-        <div id='calendar'></div>
-
-        <br>
-
-        <a href="book_hall.php" class="book-btn">
-            Book Hall
-        </a>
-
+        <h2>Welcome, <?php echo htmlspecialchars($user_data['name']); ?>!</h2>
+        <p>You are on the main dashboard of the hall booking system.</p>
+        
+        <div class="menu-box" style="width: 100%; max-width: 500px; margin-top: 20px;">
+            <h3>Account Information</h3>
+            <p><strong>Customer ID:</strong> #<?php echo (int)$user_id; ?></p>
+            <p><strong>Full Name:</strong> <?php echo htmlspecialchars($user_data['name']); ?></p>
+            <p><strong>Email:</strong> <?php echo htmlspecialchars($user_data['email']); ?></p>
+            
+            <div style="margin-top: 20px;">
+                <a href="book_hall.php" class="book-btn">+ Make New Booking</a>
+                <a href="my_bookings.php" class="book-btn" style="background:#475569; margin-left: 5px;">My Bookings</a>
+            </div>
+        </div>
     </div>
-
 </div>
-
-<script>
-
-document.addEventListener('DOMContentLoaded', function() {
-
-    var calendarEl = document.getElementById('calendar');
-
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-
-        initialView: 'dayGridMonth',
-
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: '',
-        },
-
-        events: <?php echo json_encode($events); ?>,
-
-        eventClick: function(info) {
-
-            alert(
-                info.event.title + "\n" +
-                info.event.extendedProps.description
-            );
-        }
-    });
-
-    calendar.render();
-});
-
-</script>
-
 </body>
 </html>

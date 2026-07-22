@@ -1,80 +1,47 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-?>
-<?php
 session_start();
-include "config.php";
-
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'staff') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'staff') {
     header("Location: login.php");
     exit();
 }
+include "config.php";
 
-$pending = $conn->query(
-    "SELECT * FROM bookings WHERE status='Pending'"
-)->num_rows;
-
-$approved = $conn->query(
-    "SELECT * FROM bookings WHERE status='Approved'"
-)->num_rows;
-
-$rejected = $conn->query(
-    "SELECT * FROM bookings WHERE status='Rejected'"
-)->num_rows;
-
+$total_bookings = $conn->query("SELECT COUNT(*) as total FROM bookings")->fetch_assoc()['total'];
+$pending_bookings = $conn->query("SELECT COUNT(*) as total FROM bookings WHERE status = 'Pending'")->fetch_assoc()['total'];
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Staff</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - Golden Pearl</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="dashboard-container">
-
-    <!-- SIDEBAR -->
     <?php include "sidebar_staff.php"; ?>
-
-    <!-- MAIN CONTENT -->
     <div class="main-content">
+        <h2>Welcome, Staff <?php echo htmlspecialchars($_SESSION['name']); ?>!</h2>
+        <p>Your task is to monitor and manage customer hall bookings.</p>
 
-        <h1>Welcome, <?php echo $_SESSION['name']; ?></h1>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 25px;">
+            <div class="menu-box" style="flex: 1; min-width: 200px; border-top: 4px solid #3498db;">
+                <h3>Total Bookings</h3>
+                <p style="font-size: 28px; font-weight: bold; margin: 0; box-shadow: none; padding: 0;"><?php echo (int)$total_bookings; ?></p>
+                <a href="manage_bookings.php" style="font-size: 13px; margin: 10px 0 0 0;">Manage Bookings &rarr;</a>
+            </div>
 
-        <h3>Staff Dashboard</h3>
+            <div class="menu-box" style="flex: 1; min-width: 200px; border-top: 4px solid #f39c12;">
+                <h3>Pending Approval</h3>
+                <p style="font-size: 28px; font-weight: bold; margin: 0; box-shadow: none; padding: 0; color: #d68910;"><?php echo (int)$pending_bookings; ?></p>
+                <a href="manage_bookings.php?status=Pending" style="font-size: 13px; margin: 10px 0 0 0;">Review Now &rarr;</a>
+            </div>
+        </div>
 
-<p><strong>Role:</strong> Staff</p>
-
-<p>
-    Review booking requests, approve or reject bookings,
-    and manage hall schedules.
-</p>
-
-<h3>Responsibilities</h3>
-
-<ul>
-    <li>Review booking requests</li>
-    <li>Approve or reject bookings</li>
-    <li>Manage hall schedule</li>
-</ul>
-
-<h3>Booking Summary</h3>
-
-<p>Pending Bookings : <?php echo $pending; ?></p>
-
-<p>Approved Bookings : <?php echo $approved; ?></p>
-
-<p>Rejected Bookings : <?php echo $rejected; ?></p>
-
-<a href="manage_bookings.php" class="book-btn">
-    Manage Bookings
-</a>
-
+        <div style="margin-top: 30px;">
+            <a href="manage_bookings.php" class="book-btn">Open Bookings Management Page</a>
+        </div>
     </div>
-
 </div>
-
 </body>
 </html>

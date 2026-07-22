@@ -1,72 +1,62 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-?>
-<?php
 session_start();
 include "config.php";
 
 if (isset($_POST['login'])) {
-    $email = $_POST['email'];
+    $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    $sql = "SELECT * FROM users WHERE email='$email' AND password='$password'";
-    $result = $conn->query($sql);
+    $stmt = $conn->prepare("SELECT user_id, name, password, role FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
+        if (password_verify($password, $user['password']) || $password === $user['password']) {
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['name']    = $user['name'];
+            $_SESSION['role']    = $user['role'];
 
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['name'] = $user['name'];
-        $_SESSION['role'] = $user['role'];
-
-        if ($user['role'] == 'admin') {
-            header("Location: admin.php");
-        } elseif ($user['role'] == 'staff') {
-            header("Location: staff.php");
+            if ($user['role'] == 'admin') header("Location: admin.php");
+            elseif ($user['role'] == 'staff') header("Location: staff.php");
+            else header("Location: customer.php");
+            exit();
         } else {
-            header("Location: customer.php");
+            echo "<script>alert('Incorrect password!'); window.location='login.php';</script>";
+            exit();
         }
-        exit();
     } else {
-        $error = "Login failed!";
+        echo "<script>alert('Email does not exist!'); window.location='login.php';</script>";
+        exit();
     }
+    $stmt->close();
 }
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Golden Pearl</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <h2>System Login</h2>
+    <form action="login.php" method="POST">
+        <label for="email">Email Address:</label>
+        <input type="email" id="email" name="email" required placeholder="email@example.com">
 
-<div class="auth-container">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required placeholder="Enter password">
 
-<h2 style="color:white">Login</h2>
-
-<?php
-if(isset($error)){
-    echo "<p style='color:red;'>$error</p>";
-}
-?>
-
-<form method="POST">
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
-
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
-
-    <button type="submit" name="login">Login</button>
-</form>
-
-<p>
-    Don't have an account?
-    <a href="register.php">Register Here</a>
-</p>
-</div>
-
+        <input type="submit" name="login" value="Login">
+        
+        <div style="text-align: center; margin-top: 15px;">
+            <span>Don't have an account? </span>
+            <a href="register.php">Register New Account</a>
+        </div>
+    </form>
 </body>
 </html>

@@ -1,68 +1,77 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-?>
-<?php
+session_start();
 include "config.php";
 
+$error_msg = "";
+
 if (isset($_POST['register'])) {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
+    $name     = trim($_POST['name']);
+    $email    = trim($_POST['email']);
     $password = $_POST['password'];
-    $role = $_POST['role'];
+    $confirm  = $_POST['confirm_password'];
+    $role     = 'customer';
 
-    $sql = "INSERT INTO users (name, email, password, role)
-            VALUES ('$name', '$email', '$password', '$role')";
-
-    if ($conn->query($sql)) {
-        $message = "Register successful!";
+    if (empty($name) || empty($email) || empty($password)) {
+        $error_msg = "Please fill in all required fields!";
+    } elseif ($password !== $confirm) {
+        $error_msg = "Passwords do not match!";
+    } elseif (strlen($password) < 6) {
+        $error_msg = "Password must be at least 6 characters long!";
     } else {
-        $message = "Error: " . $conn->error;
+        $check_stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
+        $check_stmt->bind_param("s", $email);
+        $check_stmt->execute();
+        
+        if ($check_stmt->get_result()->num_rows > 0) {
+            $error_msg = "This email is already registered!";
+        } else {
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $insert_stmt = $conn->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
+            $insert_stmt->bind_param("ssss", $name, $email, $hashed_password, $role);
+
+            if ($insert_stmt->execute()) {
+                echo "<script>alert('Registration successful! Please login.'); window.location='login.php';</script>";
+                exit();
+            } else {
+                $error_msg = "System error. Registration failed.";
+            }
+            $insert_stmt->close();
+        }
+        $check_stmt->close();
     }
 }
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Register</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Golden Pearl</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="auth-container">
+    <h2>Register New Account</h2>
+    <form action="register.php" method="POST">
+        <?php if (!empty($error_msg)) { ?>
+            <p style="background: #f8d7da; color: #721c24; border-left: 4px solid #f5c6cb;"><?php echo htmlspecialchars($error_msg); ?></p>
+        <?php } ?>
 
-<h2 style="color:white">Register</h2>
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" name="name" required>
 
-<?php
-if(isset($message)){
-    echo "<p>$message</p>";
-}
-?>
+        <label for="email">Email Address:</label>
+        <input type="email" id="email" name="email" required>
 
-<form method="POST">
-    <label>Name:</label><br>
-    <input type="text" name="name" required><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
 
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
+        <label for="confirm_password">Confirm Password:</label>
+        <input type="password" id="confirm_password" name="confirm_password" required>
 
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
-
-    <label>Role:</label><br>
-    <select name="role">
-        <option value="customer">Customer</option>
-        <option value="staff">Staff</option>
-    </select><br><br>
-
-    <button type="submit" name="register">Register</button>
-</form>
-
-<p>
-    Already have an account?
-    <a href="login.php">Login Here</a>
-</p>
-</div>
-
+        <input type="submit" name="register" value="Register Now">
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="login.php">Back to Login</a>
+        </div>
+    </form>
 </body>
 </html>

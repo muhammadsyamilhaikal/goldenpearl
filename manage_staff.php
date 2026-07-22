@@ -1,108 +1,57 @@
 <?php
 session_start();
-include "config.php";
-
-// Pastikan hanya admin sahaja yang boleh mengakses halaman ini
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
-    header("Location: login.php");
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    echo "<script>alert('ACCESS DENIED!'); window.location='login.php';</script>";
     exit();
 }
+include "config.php";
 
-// LOGIC UNTUK DELETE STAFF
-if (isset($_POST['delete_staff'])) {
-    $staff_id = $_POST['staff_id'];
-
-    // Pastikan kita hanya delete user yang role='staff' sahaja untuk keselamatan
-    $delete_sql = "DELETE FROM users WHERE user_id='$staff_id' AND role='staff'";
-    
-    if ($conn->query($delete_sql)) {
-        echo "<script>alert('Staff successfully removed!');</script>";
+if (isset($_GET['delete_id'])) {
+    $delete_id = (int)$_GET['delete_id'];
+    if ($delete_id === (int)$_SESSION['user_id']) {
+        echo "<script>alert('You cannot delete your own account!'); window.location='manage_staff.php';</script>";
     } else {
-        echo "<script>alert('Error: " . $conn->error . "');</script>";
+        $del_stmt = $conn->prepare("DELETE FROM users WHERE user_id = ? AND role = 'staff'");
+        $del_stmt->bind_param("i", $delete_id);
+        if ($del_stmt->execute()) echo "<script>alert('Staff account successfully deleted.'); window.location='manage_staff.php';</script>";
+        $del_stmt->close();
     }
 }
-
-// AMBIL SEMUA DATA STAFF
-$sql = "SELECT * FROM users WHERE role='staff' ORDER BY name ASC";
-$result = $conn->query($sql);
+$result = $conn->query("SELECT user_id, name, email FROM users WHERE role = 'staff' ORDER BY name ASC");
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Manage Staff</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Staff - Golden Pearl</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .action-form {
-            background: none;
-            padding: 0;
-            box-shadow: none;
-            margin: 0;
-            max-width: 100%;
-        }
-        .delete-btn {
-            background-color: #e74c3c;
-            color: white;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            width: auto;
-        }
-        .delete-btn:hover {
-            background-color: #c0392b;
-        }
-    </style>
 </head>
 <body>
-
 <div class="dashboard-container">
-
     <?php include "sidebar_admin.php"; ?>
-
     <div class="main-content">
-
-        <h2>Manage Staff (Admin)</h2>
-
-<table border="1" cellpadding="10">
-
-<tr>
-    <th>ID</th>
-    <th>Name</th>
-    <th>Email</th>
-    <th>Action</th>
-</tr>
-
-<?php 
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) { 
-?>
-
-<tr>
-    <td><?php echo $row['user_id']; ?></td>
-    <td><?php echo $row['name']; ?></td>
-    <td><?php echo $row['email']; ?></td>
-    <td>
-        <form method="POST" class="action-form" onsubmit="return confirm('Are you sure you want to remove this staff? This action cannot be undone.');">
-            <input type="hidden" name="staff_id" value="<?php echo $row['user_id']; ?>">
-            <button type="submit" name="delete_staff" class="delete-btn">Remove</button>
-        </form>
-    </td>
-</tr>
-
-<?php 
-    }
-} else {
-    echo "<tr><td colspan='4'>No staff found.</td></tr>";
-}
-?>
-
-</table>
-
+        <h2>Staff Management</h2>
+        <div style="margin: 20px 0;"><a href="add_staff.php" class="book-btn">+ Add New Staff</a></div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead><tr><th>ID</th><th>Full Name</th><th>Email Address</th><th>Action</th></tr></thead>
+                <tbody>
+                    <?php if ($result->num_rows > 0) { ?>
+                        <?php while ($row = $result->fetch_assoc()) { ?>
+                            <tr>
+                                <td>#<?php echo (int)$row['user_id']; ?></td>
+                                <td><?php echo htmlspecialchars($row['name']); ?></td>
+                                <td><?php echo htmlspecialchars($row['email']); ?></td>
+                                <td><a href="manage_staff.php?delete_id=<?php echo (int)$row['user_id']; ?>" class="delete-btn" onclick="return confirm('Delete this staff account?');">Delete</a></td>
+                            </tr>
+                        <?php } } else { ?>
+                        <tr><td colspan="4" style="text-align: center; padding: 20px;">No registered staff found.</td></tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
     </div>
-
 </div>
-
 </body>
 </html>

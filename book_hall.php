@@ -1,120 +1,87 @@
 <?php
 session_start();
-include "config.php";
-
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'customer') {
     header("Location: login.php");
     exit();
 }
+include "config.php";
 
-$message = ""; 
+$error_msg = "";
+$selected_pkg = isset($_GET['package']) ? trim($_GET['package']) : "";
+$selected_date = isset($_GET['date']) ? trim($_GET['date']) : date('Y-m-d');
 
-    if (isset($_POST['submit_booking'])) {
+if (isset($_POST['submit_booking'])) {
+    $user_id       = $_SESSION['user_id'];
+    $package_name  = trim($_POST['package_name']);
+    $event_date    = trim($_POST['event_date']);
+    $event_time    = trim($_POST['event_time']);
+    $notes         = trim($_POST['notes']);
+    $status        = 'Pending';
+    $payment_status = 'Unpaid';
 
-        $user_id = $_SESSION['user_id'];
-        $event_date = $_POST['event_date'];
-        $requested_start = $_POST['event_time'];
+    if (empty($package_name) || empty($event_date) || empty($event_time)) {
+        $error_msg = "Please complete all required fields!";
+    } elseif (strtotime($event_date) < strtotime(date('Y-m-d'))) {
+        $error_msg = "You cannot book past dates!";
+    } else {
+        $price = isset($HALL_PACKAGES[$package_name]) ? $HALL_PACKAGES[$package_name]['price'] : 0.00;
+        $event_details = "Package: " . $package_name . " | Details: " . ($notes ? $notes : "None");
 
-        $package = $_POST['package'];
-        $raw_details = $_POST['event_details'];
-        $event_details = "Pakej: " . $package . " | Detail: " . $raw_details;
+        $insert_sql = "INSERT INTO bookings (user_id, event_date, event_time, event_details, status, total_price, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $insert_stmt = $conn->prepare($insert_sql);
+        $insert_stmt->bind_param("issssds", $user_id, $event_date, $event_time, $event_details, $status, $price, $payment_status);
 
-        $duration_hours = 4;
-        $requested_end = date('H:i', strtotime($requested_start . " +$duration_hours hours"));
-
-        $check_sql = "SELECT event_time FROM bookings
-                      WHERE event_date='$event_date'
-                      AND status NOT IN ('Rejected', 'Cancelled')";
-
-        $result = $conn->query($check_sql);
-        $is_clash = false;
-
-        if ($result->num_rows > 0) {
-            while($row = $result->fetch_assoc()) {
-                $existing_start = $row['event_time']; 
-                $existing_end = date('H:i', strtotime($existing_start . " +$duration_hours hours")); 
-
-                if ($requested_start < $existing_end && $requested_end > $existing_start) {
-                    $is_clash = true;
-                    break;
-                }
-            }
-        }
-
-        if ($is_clash) {
-            $message = "<p style='color: red; font-weight: bold;'>Maaf, masa bertindih! Slot pada tarikh ni (jarak 4 jam dari tempahan sedia ada) telah ditempah.</p>";
+        if ($insert_stmt->execute()) {
+            echo "<script>alert('Booking submitted successfully!'); window.location='my_bookings.php';</script>";
+            exit();
         } else {
-            
-            $status = 'Pending';
-            $payment_status = 'Unpaid';
-            $total_price = 0;
-            
-            if ($package == "Dewan Standard (100 Pax)") {
-                $total_price = 1000.00;
-            } elseif ($package == "Dewan VIP (300 Pax)") {
-                $total_price = 2500.00;
-            } elseif ($package == "Bilik Mesyuarat (30 Pax)") {
-                $status = 'Approved';
-                $total_price = 300.00;
-            }
-
-            $sql = "INSERT INTO bookings (user_id, event_date, event_time, event_details, status, total_price, payment_status)
-                    VALUES ('$user_id', '$event_date', '$requested_start', '$event_details', '$status', '$total_price', '$payment_status')";
-
-            if ($conn->query($sql)) {
-                if ($status == 'Approved') {
-                    $message = "<p style='color: green; font-weight: bold;'>Booking berjaya dan diluluskan secara automatik!</p>";
-                } else {
-                    $message = "<p style='color: green; font-weight: bold;'>Booking berjaya! Sila tunggu kelulusan staff.</p>";
-                }
-            } else {
-                $message = "<p style='color: red; font-weight: bold;'>Error: " . $conn->error . "</p>";
-            }
+            $error_msg = "System error. Booking failed.";
         }
+        $insert_stmt->close();
     }
+}
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Book Hall</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Hall - Golden Pearl</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="dashboard-container">
-
     <?php include "sidebar_customer.php"; ?>
-
     <div class="main-content">
-        <h2>Book a Hall</h2>
+        <h2>Hall Booking Form</h2>
+        <form action="book_hall.php" method="POST" style="max-width: 600px;">
+            <?php if (!empty($error_msg)) { ?>
+                <p style="background: #f8d7da; color: #721c24; border-left: 4px solid #f5c6cb;"><?php echo htmlspecialchars($error_msg); ?></p>
+            <?php } ?>
 
-        <?php if($message != "") echo $message; ?>
+            <label for="package_name">Select Hall Package:</label>
+            <select id="package_name" name="package_name" required>
+                <option value="">-- Please Select Package --</option>
+                <?php foreach ($HALL_PACKAGES as $pkg => $details) { ?>
+                    <option value="<?php echo htmlspecialchars($pkg); ?>" <?php if ($selected_pkg === $pkg) echo "selected"; ?>>
+                        <?php echo htmlspecialchars($pkg); ?> (RM<?php echo number_format($details['price'], 2); ?>)
+                    </option>
+                <?php } ?>
+            </select>
 
-        <form method="POST" action="">
-            <label>Event Date:</label><br>
-            <input type="date" name="event_date" min="<?php echo date('Y-m-d'); ?>" required><br><br>
+            <label for="event_date">Event Date:</label>
+            <input type="date" id="event_date" name="event_date" value="<?php echo htmlspecialchars($selected_date); ?>" required min="<?php echo date('Y-m-d'); ?>">
 
-            <label>Event Time:</label><br>
-            <input type="time" name="event_time" required><br><br>
+            <label for="event_time">Event Time / Duration (e.g., 10:00 - 14:00):</label>
+            <input type="text" id="event_time" name="event_time" required placeholder="10:00 - 14:00">
 
-        <label>Select Package:</label><br>
-        <select name="package" required>
-         <option value="" disabled selected>Pilih Pakej / Dewan</option>
-         <option value="Dewan Standard (100 Pax)">Dewan Standard (100 Pax)</option>
-         <option value="Dewan VIP (300 Pax)">Dewan VIP (300 Pax)</option>
-          <option value="Bilik Mesyuarat (30 Pax)">Bilik Mesyuarat (30 Pax)</option>
-        </select><br><br>
+            <label for="notes">Additional Notes / Details:</label>
+            <textarea id="notes" name="notes" placeholder="PA system requirements, table arrangement, etc..."></textarea>
 
-            <label>Event Details (Purpose, Pax, etc):</label><br>
-            <textarea name="event_details" required placeholder="Describe your event here..."></textarea><br><br>
-
-            <button type="submit" name="submit_booking">Submit Booking</button>
+            <input type="submit" name="submit_booking" value="Submit Booking" class="book-btn">
+            <a href="customer.php" style="display: block; text-align: center; margin-top: 15px;">Back</a>
         </form>
-
     </div>
-
 </div>
-
 </body>
 </html>

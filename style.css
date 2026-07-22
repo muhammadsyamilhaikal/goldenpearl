@@ -1,4 +1,6 @@
-/* style.css */
+/* ==========================================================================
+   1. RESET & GAYA ASAS
+   ========================================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -8,37 +10,30 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #414040;
-
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
     min-height: 100vh;
     padding: 20px;
-
     overflow-x: hidden;
     position: relative;
 }
 
+/* Latar Belakang Dewan (Background Image dengan kesan Blur) */
 body::before {
     content: "";
-
     position: fixed;
     top: 0;
     left: 0;
-
     width: 100%;
     height: 100%;
-
     background-image: url('image/hall2.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-
     filter: blur(5px);
     transform: scale(1.1);
-
     z-index: -1;
 }
 
@@ -48,6 +43,107 @@ h2 {
     text-align: center;
 }
 
+p {
+    margin-bottom: 15px;
+    font-size: 16px;
+    background: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Link biasa */
+a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+    margin: 10px 5px;
+    display: inline-block;
+    transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #2980b9;
+}
+
+/* ==========================================================================
+   2. ANIMASI & GAYA BUTANG (BUTTON ANIMATIONS)
+   ========================================================================== */
+/* Pergerakan lancar & reka bentuk untuk semua jenis butang */
+button, 
+input[type="submit"], 
+input[type="button"], 
+input[type="reset"], 
+.book-btn, 
+.delete-btn {
+    display: inline-block;
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px; /* Bucu lebih bulat moden */
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    
+    /* ANIMASI UTAMA: Naik/Turun & Warna yang sangat lancar */
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Kesan Hover (Bila mouse lalu atas butang - Naik ke atas sikit) */
+button:hover, 
+input[type="submit"]:hover, 
+input[type="button"]:hover, 
+input[type="reset"]:hover, 
+.book-btn:hover, 
+.delete-btn:hover {
+    transform: translateY(-3px); /* Terangkat 3px */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Bayang lebih gelap & luas */
+    filter: brightness(1.1); /* Warna jadi lebih terang secara automatik */
+    text-decoration: none;
+}
+
+/* Kesan Active (Bila butang diklik / ditekan - Turun & mengecil) */
+button:active, 
+input[type="submit"]:active, 
+input[type="button"]:active, 
+input[type="reset"]:active, 
+.book-btn:active, 
+.delete-btn:active {
+    transform: translateY(1px) scale(0.98); /* Butang turun ke bawah macam ditekan fizikal */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    filter: brightness(0.95);
+}
+
+/* Warna Butang Khas: Tempah (Mengikut warna Sidebar #5e0023) */
+.book-btn {
+    background: #5e0023;
+    width: auto;
+}
+
+/* Warna Butang Khas: Padam / Delete */
+.delete-btn {
+    background: #e74c3c;
+    width: auto;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+.delete-btn:hover {
+    background: #c0392b;
+}
+
+/* ==========================================================================
+   3. BORANG & INPUT (FORMS)
+   ========================================================================== */
 form {
     background-color: #ffffff;
     padding: 30px;
@@ -68,197 +164,84 @@ label {
 input[type="text"],
 input[type="email"],
 input[type="password"],
-select {
+select,
+textarea {
     width: 100%;
     padding: 12px;
     margin-bottom: 20px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 14px;
-    transition: border-color 0.3s;
+    font-family: inherit;
+    transition: all 0.3s ease;
 }
 
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
-select:focus {
+select:focus,
+textarea:focus {
     border-color: #3498db;
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3); /* Kesan glowing biru bila taip */
     outline: none;
 }
 
-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-button:hover {
-    background-color: #2980b9;
-}
-
-a {
-    color: #3498db;
-    text-decoration: none;
-    font-weight: 600;
-    margin: 10px 5px;
-    display: inline-block;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-p {
-    margin-bottom: 15px;
-    font-size: 16px;
-    background: #fff;
-    padding: 10px 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    width: 100%;
-    max-width: 400px;
-}
-.menu-box {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-
-    width: 300px;
-}
-
-table {
-    background: white;
-    border-collapse: collapse;
-    width: 80%;
-}
-
-th {
-    background: #3498db;
-    color: white;
-}
-
-th, td {
-    padding: 12px;
-    text-align: center;
-}
-
 textarea {
-    width: 100%;
-    padding: 12px;
     min-height: 120px;
     resize: vertical;
 }
+
+/* ==========================================================================
+   4. LAYOUT UTAMA (DASHBOARD & SIDEBAR)
+   ========================================================================== */
 .dashboard-container {
     display: flex;
     width: 100%;
     min-height: 100vh;
 }
 
-/* SIDEBAR */
+/* Sidebar Navigation */
 .sidebar {
     width: 250px;
     background: #5e0023;
     padding: 30px 20px;
-
     display: flex;
     flex-direction: column;
-    gap: 20px;
-
+    gap: 15px;
     color: white;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar h2 {
     color: white;
+    margin-bottom: 25px;
 }
 
 .sidebar a {
     color: white;
     text-decoration: none;
-
-    padding: 12px;
+    padding: 12px 15px;
     border-radius: 6px;
-
-    transition: 0.3s;
+    margin: 0;
+    transition: all 0.25s ease;
+    display: block;
 }
 
-.sidebar a:hover {
-    background: rgba(255,255,255,0.2);
+.sidebar a:hover, 
+.sidebar a.active {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(5px); /* Menu tertolak ke kanan sikit bila hover */
+    text-decoration: none;
 }
 
-/* MAIN */
+/* Kandungan Utama (Main Content) */
 .main-content {
     flex: 1;
     padding: 40px;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.92);
+    overflow-y: auto;
 }
 
-/* CALENDAR */
-#calendar {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-
-    width: 100%;
-    min-height: 700px;
-}
-
-/* BOOK BUTTON */
-.book-btn {
-    display: inline-block;
-    background: #5e0023;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-}
-.fc-toolbar-title {
-    color: black !important;
-    font-size: 28px !important;
-    font-weight: bold;
-}
-
-.fc-button {
-    width: auto !important;
-}
-
-.fc-toolbar-title {
-    color: black !important;
-    font-size: 28px !important;
-    font-weight: bold;
-}
-
-.fc-button {
-    width: auto !important;
-}
-
-.sidebar a.active {
-    background: rgba(255,255,255,0.2);
-}
-
-@media print {
-
-    .sidebar {
-        display: none;
-    }
-
-    .main-content {
-        width: 100%;
-    }
-
-    button {
-        display: none;
-    }
-}
 .main-content ul {
     margin: 15px 0;
     padding-left: 25px;
@@ -267,19 +250,111 @@ textarea {
 .main-content li {
     margin-bottom: 10px;
 }
-.delete-btn {
-    background: #e74c3c;
-    color: white;
 
-    width: auto;
-    padding: 6px 12px;
-
-    border: none;
-    border-radius: 4px;
-
-    cursor: pointer;
+/* ==========================================================================
+   5. JADUAL & ELEMEN TAMBAHAN (TABLES & MENU)
+   ========================================================================== */
+.menu-box {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 300px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.delete-btn:hover {
-    background: #c0392b;
+table {
+    background: white;
+    border-collapse: collapse;
+    width: 100%; /* Ditukar dari 80% supaya lebih kemas dalam main-content */
+    margin-top: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th {
+    background: #5e0023; /* Diselaraskan dengan warna tema sidebar (asal: #3498db) */
+    color: white;
+    font-weight: 600;
+}
+
+th, td {
+    padding: 14px 12px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+    background-color: #f8f9fa; /* Warna latar bertukar bila mouse lalu atas baris jadual */
+}
+
+/* ==========================================================================
+   6. KALENDAR (FULLCALENDAR CUSTOMIZATION)
+   ========================================================================== */
+#calendar {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    width: 100%;
+    min-height: 700px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.fc-toolbar-title {
+    color: #000000 !important;
+    font-size: 26px !important;
+    font-weight: bold;
+}
+
+.fc-button {
+    width: auto !important;
+    padding: 8px 16px !important;
+}
+
+/* ==========================================================================
+   7. GAYA CETAKAN (PRINT MEDIA QUERY)
+   ========================================================================== */
+@media print {
+    body {
+        background: none;
+        padding: 0;
+    }
+    
+    body::before {
+        display: none;
+    }
+
+    .sidebar {
+        display: none !important;
+    }
+
+    .main-content {
+        width: 100% !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    button, 
+    input[type="submit"], 
+    .book-btn, 
+    .delete-btn {
+        display: none !important;
+    }
+    
+    table {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}
+/* ==========================================================================
+   8. MOBILE RESPONSIVE LAYOUT
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+    .dashboard-container { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; padding: 15px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+    .main-content { padding: 15px; }
+    table { display: block; overflow-x: auto; white-space: nowrap; }
 }

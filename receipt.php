@@ -1,69 +1,97 @@
 <?php
 session_start();
-include "config.php";
-
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
+include "config.php";
 
-$booking_id = $_GET['id'];
-$sql = "SELECT bookings.*, users.name, users.email FROM bookings JOIN users ON bookings.user_id = users.user_id WHERE booking_id='$booking_id'";
-$result = $conn->query($sql);
-$booking = $result->fetch_assoc();
-
-if($booking['payment_status'] != 'Paid') {
-    die("Receipt not available. Payment not cleared yet.");
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    header("Location: login.php");
+    exit();
 }
-?>
 
+$booking_id = (int)$_GET['id'];
+$user_id    = $_SESSION['user_id'];
+$role       = $_SESSION['role'];
+
+if ($role === 'customer') {
+    $sql = "SELECT b.*, u.name as customer_name FROM bookings b JOIN users u ON b.user_id = u.user_id WHERE b.booking_id = ? AND b.user_id = ? AND (b.payment_status = 'Paid' OR b.status = 'Paid')";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $booking_id, $user_id);
+} else {
+    $sql = "SELECT b.*, u.name as customer_name FROM bookings b JOIN users u ON b.user_id = u.user_id WHERE b.booking_id = ? AND (b.payment_status = 'Paid' OR b.status = 'Paid')";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $booking_id);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    echo "<script>alert('Receipt not found or payment not completed!'); window.history.back();</script>";
+    exit();
+}
+$booking = $result->fetch_assoc();
+$stmt->close();
+?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Official Receipt - #<?php echo $booking['booking_id']; ?></title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 40px; }
-        .receipt-box { border: 2px solid #000; padding: 30px; max-width: 600px; margin: auto; }
-        h1 { text-align: center; margin-bottom: 5px; }
-        .text-center { text-align: center; }
-        .details { margin-top: 30px; }
-        .details th, .details td { padding: 10px; text-align: left; }
-        .paid-stamp { color: green; font-size: 30px; font-weight: bold; text-align: center; margin-top: 20px; border: 3px solid green; padding: 10px; display: inline-block; transform: rotate(-10deg); }
-        .print-btn { display: block; margin: 30px auto; padding: 10px 20px; font-size: 16px; cursor: pointer; }
-        @media print { .print-btn { display: none; } }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt #<?php echo $booking_id; ?> - Golden Pearl</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="receipt-box">
-    <h1>GOLDEN PEARL HALL</h1>
-    <p class="text-center">Official Payment Receipt</p>
-    <hr>
-    
-    <table class="details" width="100%">
-        <tr>
-            <th>Receipt No:</th> <td>#<?php echo $booking['booking_id']; ?></td>
-        </tr>
-        <tr>
-            <th>Customer Name:</th> <td><?php echo $booking['name']; ?></td>
-        </tr>
-        <tr>
-            <th>Event Date:</th> <td><?php echo $booking['event_date']; ?> (<?php echo $booking['event_time']; ?>)</td>
-        </tr>
-        <tr>
-            <th>Event Details:</th> <td><?php echo $booking['event_details']; ?></td>
-        </tr>
-        <tr>
-            <th>Total Paid:</th> <td><strong>RM <?php echo $booking['total_price']; ?></strong></td>
-        </tr>
-    </table>
-
-    <div class="text-center">
-        <div class="paid-stamp">PAID IN FULL</div>
+<div class="dashboard-container">
+    <?php if ($role === 'admin') include "sidebar_admin.php"; elseif ($role === 'staff') include "sidebar_staff.php"; else include "sidebar_customer.php"; ?>
+    <div class="main-content">
+        <div class="menu-box" style="width: 100%; max-width: 650px; margin: 0 auto; border: 2px solid #5e0023;">
+            <div style="text-align: center; border-bottom: 2px dashed #ccc; padding-bottom: 15px; margin-bottom: 15px;">
+                <h2 style="margin: 0; color: #5e0023;">GOLDEN PEARL HALL BOOKING</h2>
+                <p style="box-shadow: none; padding: 0; margin: 5px 0 0 0; font-size: 14px;">Official Payment Receipt</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <div>
+                    <p style="box-shadow: none; padding: 0; margin: 0;"><strong>Receipt No:</strong> #GP-<?php echo $booking_id; ?></p>
+                    <p style="box-shadow: none; padding: 0; margin: 0;"><strong>Print Date:</strong> <?php echo date('d/m/Y'); ?></p>
+                </div>
+                <div><p style="box-shadow: none; padding: 0; margin: 0;"><strong>Status:</strong> <span style="color: #27ae60; font-weight: bold;">PAID</span></p></div>
+            </div>
+            <table style="width: 100%; box-shadow: none; border: 1px solid #eee; margin-top: 10px;">
+                <thead>
+                    <tr style="background: #f8f9fa; color: #333;">
+                        <th style="background: #f8f9fa; color: #333; text-align: left;">Description</th>
+                        <th style="background: #f8f9fa; color: #333; text-align: right;">Amount (RM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: left; padding: 15px;">
+                            <strong><?php echo htmlspecialchars($booking['event_details']); ?></strong><br>
+                            Date: <?php echo date('d/m/Y', strtotime($booking['event_date'])); ?><br>
+                            Time: <?php echo htmlspecialchars($booking['event_time']); ?><br>
+                            Customer: <?php echo htmlspecialchars($booking['customer_name']); ?>
+                        </td>
+                        <td style="text-align: right; padding: 15px; vertical-align: top;"><?php echo number_format($booking['total_price'], 2); ?></td>
+                    </tr>
+                    <tr style="background: #fdfefe; font-size: 18px; font-weight: bold;">
+                        <td style="text-align: right; padding: 15px; border-top: 2px solid #333;">TOTAL PAID:</td>
+                        <td style="text-align: right; padding: 15px; border-top: 2px solid #333; color: #27ae60;">RM <?php echo number_format($booking['total_price'], 2); ?></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="text-align: center; margin-top: 30px; font-size: 13px; color: #777;">
+                <p style="box-shadow: none; padding: 0; margin: 0;">Thank you for choosing Golden Pearl!</p>
+                <p style="box-shadow: none; padding: 0; margin: 0;">This is a computer-generated receipt, no signature required.</p>
+            </div>
+            <div style="margin-top: 25px; text-align: center;">
+                <button onclick="window.print()" class="book-btn" style="background: #3498db; width: auto; display: inline-block;">Print Receipt</button>
+                <a href="<?php echo ($role === 'customer') ? 'my_bookings.php' : 'manage_bookings.php'; ?>" class="book-btn" style="background: #475569; width: auto; display: inline-block; margin-left: 10px;">Back</a>
+            </div>
+        </div>
     </div>
 </div>
-
-<button class="print-btn" onclick="window.print()">Print Receipt</button>
-
 </body>
 </html>
