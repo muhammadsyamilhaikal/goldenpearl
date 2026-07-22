@@ -5,10 +5,10 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Database connection details
-$host = "sql306.infinityfree.com";
-$user = "if0_42164453";
-$pass = "rkKbbG05Q2";  
-$db   = "if0_42164453_golden_pearl"; 
+$host = "your_db_host";
+$user = "your_db_user";
+$pass = "your_db_password";   
+$db   = "your_db_name";
 
 $conn = new mysqli($host, $user, $pass, $db);
 
